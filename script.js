@@ -34,7 +34,6 @@ const allRecitersSource = [
     { id:'hazza',  name:'هزاع البلوشي',            path:'hazza/',   server:'https://server11.mp3quran.net/', availableSurahs:[1,6,13,14,15,18,19,20,25,29,30,31,32,34,35,36,37,38,39,40,41,42,44,47,49,50,51,52,53,54,55,56,57,61,63,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114] },
     { id:'bader',  name:'بدر التركي',  path:'bader/Rewayat-Hafs-A-n-Assem/', server:'https://server10.mp3quran.net/', availableSurahs:null },
     { id:'islam',  name:'إسلام صبحي',  path:'islam/Rewayat-Hafs-A-n-Assem/', server:'https://server14.mp3quran.net/', availableSurahs:[1,2,3,5,8,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26,27,29,30,31,32,34,35,36,38,39,40,41,42,43,44,45,46,47,48,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114] }
-    ,{ id:'hitham', name:'هيثم الجدعاني', path:'hitham/', server:null, availableSurahs:null }
 ];
 const surahNames = [
     "الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
@@ -346,21 +345,11 @@ function populateReciterModal(){
     modalReciterList.appendChild(fragment);
 }
 
-function openReciterModal(){populateReciterModal();reciterModal.classList.add('active');document.body.style.overflow='hidden';if(reciterSearchInput)reciterSearchInput.value='';}
+function openReciterModal(){populateReciterModal();reciterModal.classList.add('active');document.body.style.overflow='hidden';}
 function closeReciterModal(){reciterModal.classList.remove('active');document.body.style.overflow='';}
 window.openInfoModal=()=>{infoModal.classList.add('active');document.body.style.overflow='hidden';}
 window.closeInfoModal=()=>{infoModal.classList.remove('active');document.body.style.overflow='';}
 
-const reciterSearchInput=document.getElementById('reciterSearch');
-if(reciterSearchInput){
-    reciterSearchInput.addEventListener('input',(e)=>{
-        const q=e.target.value.trim();
-        document.querySelectorAll('#modalReciterList .modal-list-item').forEach(item=>{
-            const match=q===''||item.dataset.name.includes(q);
-            item.style.display=match?'':'none';
-        });
-    });
-}
 reciterTriggerBtn.addEventListener('click',openReciterModal);
 closeModalBtn.addEventListener('click',closeReciterModal);
 reciterModal.addEventListener('click',(e)=>{if(e.target===reciterModal)closeReciterModal();});
