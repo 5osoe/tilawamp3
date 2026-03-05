@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tilawa-cache-v2';
+const CACHE_NAME = 'tilawa-cache-v3';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -10,50 +10,23 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS_TO_CACHE);
-        })
-    );
+    event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
     self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
+        caches.keys().then((names) => Promise.all(names.map((name) => name !== CACHE_NAME ? caches.delete(name) : null)))
     );
     self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
-    
-    // استثناء ملفات الصوت من الكاش لتوفير المساحة وتجنب أخطاء النطاق (Range requests)
-    if (url.pathname.endsWith('.mp3') || url.hostname.includes('mp3quran.net')) {
-        return;
-    }
-
+    if (url.pathname.endsWith('.mp3') || url.hostname.includes('mp3quran.net')) return;
     if (event.request.mode === 'navigate') {
-        event.respondWith(
-            fetch(event.request)
-            .catch(() => {
-                return caches.match('./index.html');
-            })
-        );
+        event.respondWith(fetch(event.request).catch(() => caches.match('./index.html')));
         return;
     }
-
-    event.respondWith(
-        caches.match(event.request).then((response) => {
-            return response || fetch(event.request);
-        })
-    );
+    event.respondWith(caches.match(event.request).then((response) => response || fetch(event.request)));
 });
