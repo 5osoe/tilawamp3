@@ -6,6 +6,7 @@ const AUDIO_SERVERS = [
     "https://server11.mp3quran.net/",
     "https://server10.mp3quran.net/",
     "https://server7.mp3quran.net/",
+    "https://server14.mp3quran.net/",
     "https://server16.mp3quran.net/"
 ];
 const SERVER_STORAGE_KEY = "preferred_audio_server";
@@ -31,8 +32,8 @@ const allRecitersSource = [
     { id:'kurdi',  name:'رعد محمد الكردي',         path:'kurdi/',   server:null, availableSurahs:null },
     { id:'bsfr',   name:'عبدالله بصفر',            path:'bsfr/',    server:null, availableSurahs:null },
     { id:'hazza',  name:'هزاع البلوشي',            path:'hazza/',   server:'https://server11.mp3quran.net/', availableSurahs:[1,6,13,14,15,18,19,20,25,29,30,31,32,34,35,36,37,38,39,40,41,42,44,47,49,50,51,52,53,54,55,56,57,61,63,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114] },
-    { id:'bader',  name:'بدر التركي',              path:'bader/',   server:null, availableSurahs:null },
-    { id:'islam',  name:'إسلام صبحي',              path:'islam/',   server:null, availableSurahs:null }
+    { id:'bader',  name:'بدر التركي',  path:'bader/Rewayat-Hafs-A-n-Assem/', server:'https://server10.mp3quran.net/', availableSurahs:null },
+    { id:'islam',  name:'إسلام صبحي',  path:'islam/Rewayat-Hafs-A-n-Assem/', server:'https://server14.mp3quran.net/', availableSurahs:[1,2,3,5,8,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26,27,29,30,31,32,34,35,36,38,39,40,41,42,43,44,45,46,47,48,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114] }
 ];
 const surahNames = [
     "الفاتحة","البقرة","آل عمران","النساء","المائدة","الأنعام","الأعراف","الأنفال","التوبة","يونس",
@@ -256,7 +257,7 @@ function changeReciter(newIndex){
     currentReciterIndex=newIndex;
     localStorage.setItem('quran_reciter_id',reciters[currentReciterIndex].id);
     audio.pause();audio.currentTime=0;
-    updateReciterUI(newIndex);renderSurahs();updatePlayerInfo();
+    updateReciterUI(newIndex);renderSurahs(true);updatePlayerInfo();
 }
 
 async function playTrack(index,autoPlay=true,startTime=0){
@@ -281,7 +282,8 @@ async function playTrack(index,autoPlay=true,startTime=0){
     }catch(err){setPlayingState(false);}
 }
 
-function renderSurahs(){
+function renderSurahs(preserveScroll=false){
+    const savedScroll=preserveScroll?window.scrollY:0;
     surahListContainer.innerHTML='';
     const fragment=document.createDocumentFragment();
     surahNames.forEach((name,index)=>{
@@ -308,6 +310,7 @@ function renderSurahs(){
     });
     surahListContainer.appendChild(fragment);
     highlightActiveSurah();
+    if(preserveScroll) requestAnimationFrame(()=>window.scrollTo(0,savedScroll));
 }
 
 function updateReciterUI(index){
@@ -364,26 +367,41 @@ surahSearchInput.addEventListener('input',(e)=>{
 async function downloadWithProgress(event,url,filename){
     event.preventDefault();event.stopPropagation();
     const btn=event.currentTarget;
-    if(btn.dataset.downloading==="true")return;
-    btn.dataset.downloading="true";const orig=btn.innerHTML;
+    if(btn.dataset.downloading==="true"){
+        btn._cancelDownload=true;
+        return;
+    }
+    btn.dataset.downloading="true";
+    btn._cancelDownload=false;
+    const orig=btn.innerHTML;
+    const controller=new AbortController();
+    btn._abortCtrl=controller;
     try{
-        const response=await fetch(url,{method:"GET",headers:{Range:"bytes=0-"}});
+        const response=await fetch(url,{method:"GET",headers:{Range:"bytes=0-"},signal:controller.signal});
         if(!response.ok)throw new Error(response.status);
         const total=parseInt(response.headers.get('content-length'),10)||0;
         let loaded=0;const reader=response.body.getReader();const chunks=[];
-        while(true){const{done,value}=await reader.read();if(done)break;chunks.push(value);loaded+=value.length;
-            btn.innerHTML=total>0?`<span style="font-size:10px;font-weight:700;">${Math.round((loaded/total)*100)}%</span>`:`<div class="progress-spinner"></div>`;}
+        while(true){
+            if(btn._cancelDownload){reader.cancel();controller.abort();return;}
+            const{done,value}=await reader.read();if(done)break;
+            chunks.push(value);loaded+=value.length;
+            const pct=total>0?Math.round((loaded/total)*100):0;
+            btn.innerHTML=`<span class="dl-progress"><span class="dl-pct">${pct}%</span><span class="dl-cancel" onclick="event.stopPropagation();this.closest('.btn-download')._cancelDownload=true;" title="إلغاء">✕</span></span>`;
+        }
+        if(btn._cancelDownload)return;
         const blob=new Blob(chunks);const blobUrl=window.URL.createObjectURL(blob);
         const a=document.createElement('a');a.style.display='none';a.href=blobUrl;a.download=filename;
         document.body.appendChild(a);a.click();window.URL.revokeObjectURL(blobUrl);document.body.removeChild(a);
-    }catch(error){window.open(url,'_blank');}
-    finally{btn.innerHTML=orig;btn.dataset.downloading="false";}
+    }catch(error){if(error.name!=='AbortError')window.open(url,'_blank');}
+    finally{btn.innerHTML=orig;btn.dataset.downloading="false";btn._cancelDownload=false;}
 }
 
 function setPlayingState(playing){
     loadingSpinner.style.display='none';miniLoadingSpinner.style.display='none';
     playIcon.style.display=playing?'none':'block';pauseIcon.style.display=playing?'block':'none';
     miniPlayIcon.style.display=playing?'none':'block';miniPauseIcon.style.display=playing?'block':'none';
+    const viz=document.getElementById('audioVisualizer');
+    if(viz)viz.classList.toggle('playing',playing);
 }
 function setLoadingState(loading){
     if(loading){playIcon.style.display='none';pauseIcon.style.display='none';loadingSpinner.style.display='inline-block';

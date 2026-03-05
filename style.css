@@ -71,7 +71,7 @@ header .container{display:flex;align-items:center;justify-content:space-between;
 .sidebar-item-label{flex:1;}
 
 /* MAIN */
-main{flex:1;margin-top:var(--header-h);padding-top:20px;padding-bottom:calc(var(--mini-player-h)+36px);}
+main{flex:1;margin-top:var(--header-h);padding-top:20px;padding-bottom:calc(var(--mini-player-h)+60px);}
 .search-container{margin-bottom:16px;position:sticky;top:calc(var(--header-h)+10px);z-index:900;}
 .search-wrapper{position:relative;}
 .search-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;}
@@ -196,3 +196,21 @@ input[type="range"]::-webkit-slider-thumb:active{transform:scale(1.3);}
 .fp-surah-name{font-size:1.7rem;}
 .fp-artwork{width:90px;height:90px;}
 }
+
+.visualizer{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+.ripple-core{width:36px;height:36px;border-radius:50%;background:var(--blue-light);border:2.5px solid var(--blue);opacity:0.5;transition:opacity 0.3s,transform 0.3s;}
+.visualizer.playing .ripple-core{opacity:1;animation:core-pulse 1.8s ease-in-out infinite;}
+.ripple-ring{position:absolute;border-radius:50%;border:2px solid var(--blue);opacity:0;pointer-events:none;}
+.r1{width:52px;height:52px;}
+.r2{width:72px;height:72px;}
+.r3{width:92px;height:92px;}
+.visualizer.playing .r1{animation:ripple-out 2s ease-out infinite;}
+.visualizer.playing .r2{animation:ripple-out 2s ease-out infinite 0.5s;}
+.visualizer.playing .r3{animation:ripple-out 2s ease-out infinite 1s;}
+@keyframes ripple-out{0%{transform:scale(0.6);opacity:0.7;}100%{transform:scale(1.15);opacity:0;}}
+@keyframes core-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+
+.dl-progress{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;}
+.dl-pct{color:var(--blue);}
+.dl-cancel{color:var(--text-muted);font-size:11px;cursor:pointer;padding:2px 4px;border-radius:4px;transition:color 0.2s,background 0.2s;}
+.dl-cancel:hover{color:#e74c3c;background:rgba(231,76,60,0.1);}
